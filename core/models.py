@@ -50,3 +50,4 @@ class Product(BaseModel):
     minimum_investment_inr: PosFinite
     lock_in_months: NonNegativeInt
     category_description: str
+
