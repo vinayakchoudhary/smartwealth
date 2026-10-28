@@ -1,6 +1,12 @@
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    NonNegativeInt,
+    model_validator,
+)
 
 PosFinite = Annotated[float, Field(gt=0, allow_inf_nan=False)]
 NonNegFinite = Annotated[float, Field(ge=0, allow_inf_nan=False)]
@@ -43,7 +49,7 @@ class Product(BaseModel):
     product_name: str
     asset_class: AllowedAssetClass
     risk_score: Int1to5
-    assumed_annual_return: Annotated[float, Field(gt=-1, allow_inf_nan=False)]
+    assumed_annual_return: Annotated[float, Field(ge=-1, allow_inf_nan=False)] # allwing return to be -100%
     volatility_proxy: NonNegFinite
     annual_expense_ratio: Annotated[float, Field(ge=0, lt=1, allow_inf_nan=False)]
     liquidity_days: NonNegativeInt
@@ -51,3 +57,20 @@ class Product(BaseModel):
     lock_in_months: NonNegativeInt
     category_description: str
 
+class MonthlyReturn:
+    model_config = ConfigDict(extra="forbid")
+
+    product_id: str
+    month: Annotated[str, Field(pattern=r"^\d{4}-(0[1-9]|1[0-2])$")]
+    monthly_return: Annotated[float, Field(ge=-1, allow_inf_nan=False)]
+
+
+
+def incremetn_month(date:str, inc:int):
+    year, month = map(int, date.split("-"))
+    year += inc // 12
+    month += inc % 12
+    if month > 13:
+        month -= 1
+        year += 1
+    return f"{year}-{month:02d}" # maintaing the date style
