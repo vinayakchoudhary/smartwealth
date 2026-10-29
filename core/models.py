@@ -4,7 +4,9 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    NonNegativeFloat,
     NonNegativeInt,
+    ValidationError,
     model_validator,
 )
 
@@ -14,7 +16,7 @@ Int1to5 = Annotated[int, Field(ge=1, le=5)] # we are assuming the risk and the t
 
 
 AllowedExperiences = Literal["beginner", "advanced", "intermediate"]
-AllowedPreference = Literal["high_growth", "capital_protection", "low_cost", "avoid_equity", "tax_saving", "no_lock_in"]
+AllowedPreference = ["high_growth", "capital_protection", "low_cost", "avoid_equity", "tax_saving", "no_lock_in"]
 AllowedAssetClass = Literal["cash", "debt", "hybrid", "equity"]
 
 class Investor(BaseModel):
@@ -33,7 +35,7 @@ class Investor(BaseModel):
     emergency_fund_months: NonNegFinite
     liquidity_need_inr: NonNegFinite
     experience: AllowedExperiences
-    preference: None | AllowedPreference = None
+    preference: str | None # random preferences are allowed but not considered for a decision
 
     @model_validator(mode="after")
     def non_zero_capital_check(self) -> "Investor":
@@ -53,11 +55,11 @@ class Product(BaseModel):
     volatility_proxy: NonNegFinite
     annual_expense_ratio: Annotated[float, Field(ge=0, lt=1, allow_inf_nan=False)]
     liquidity_days: NonNegativeInt
-    minimum_investment_inr: PosFinite
+    minimum_investment_inr: NonNegativeFloat
     lock_in_months: NonNegativeInt
     category_description: str
 
-class MonthlyReturn:
+class MonthlyReturn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     product_id: str
@@ -66,7 +68,7 @@ class MonthlyReturn:
 
 
 
-def incremetn_month(date:str, inc:int):
+def increment_month(date:str, inc:int):
     year, month = map(int, date.split("-"))
     year += inc // 12
     month += inc % 12
@@ -74,3 +76,16 @@ def incremetn_month(date:str, inc:int):
         month -= 1
         year += 1
     return f"{year}-{month:02d}" # maintaing the date style
+
+
+def main():
+    try:
+        test = MonthlyReturn(product_id="test", month="no",monthly_return=-2)
+        print(test)
+    except ValidationError as e:
+        print(e)
+
+
+if __name__ == "__main__":
+    main()
+    
