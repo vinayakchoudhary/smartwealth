@@ -1,39 +1,13 @@
 from typing import Literal
 
-from numpy import inf
 from scipy.optimize import linprog
-from validator import get_and_validate_investor_dict, get_and_validate_product_dict
 
-# modeling for the min investment amount is still pending 
-# def allocate_weights(amount:float, investor_data: dict, products:dict[str, dict]) -> list[float] | None:
-#     products_list = list(products.items())
-#     min_weights = [(product_data["minimum_investment_inr"] / amount) for product_id, product_data in products_list]
-#     curr_weights = allocate_weights_helper(investor_data, products_list, set())
-#     if not curr_weights:
-#         return None
-#     problem_idx = get_closed_failing_product_idx(min_weights, curr_weights)
-#     while (problem_idx > -1):
-#         pass
-#     return curr_weights
+from core.validator import get_and_validate_investor_dict, get_and_validate_product_dict
 
 
-
-
-def get_closed_failing_product_idx(min_weights: list[float], curr_weights: list[float]) -> int:
-    min_dist = inf
-    res = -1
-    for i in range(len(min_weights)):
-        if curr_weights[i] < min_weights[i] and min_weights[i] - curr_weights[i] < min_dist:
-            min_dist = min_weights[i] - curr_weights[i]
-            res = i
-    return res
-
-
-
-
-def allocate_weights_helper(investor_data: dict, products:list[tuple[str, dict]], exclude:set[str]) -> list[float] | None:
+def allocate_weights(amount: float, investor_data: dict, products:list[tuple[str, dict]]) -> list[float] | None:
     n = len(products)
-    bounds = get_bounds(investor_data, products, exclude)
+    bounds = get_bounds(investor_data, products)
     A_ub, b_ub = get_A_and_b_matrix(investor_data, products)
     c = get_c_matrix(investor_data, products)
     A_eq, b_eq = [[1]*n], [1]
@@ -50,11 +24,11 @@ def allocate_weights_helper(investor_data: dict, products:list[tuple[str, dict]]
 
 
 
-def get_bounds(investor_data:dict, products:list[tuple[str, dict]], exclude:set[str]) -> list[tuple[float, float]]:
+def get_bounds(investor_data:dict, products:list[tuple[str, dict]]) -> list[tuple[float, float]]:
     res = []
     max_lock_in = 0 if investor_data["preference"] == "no_lock_in" else investor_data["horizon_months"] 
     for product_id, product_data in products:
-        if product_id in exclude or product_data["lock_in_months"] > max_lock_in or \
+        if product_data["lock_in_months"] > max_lock_in or \
             (investor_data["preference"] == "avoid_equity" and product_data["asset_class"] == "equity"):
             res.append((0.0, 0.0))
         else:
@@ -120,7 +94,7 @@ def main():
     investor = get_and_validate_investor_dict("investor_profiles.csv")[0]
     products = get_and_validate_product_dict("investment_products.csv")[0]
     for i in range(1, 13):
-        l = allocate_weights_helper(investor[f"INV{i:02}"], list(products.items()), set())
+        l = allocate_weights(10_000, investor[f"INV{i:02}"], list(products.items()))
         print(l)
     
     

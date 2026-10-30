@@ -1,9 +1,10 @@
 from collections.abc import KeysView
 from math import floor
 
-from loader import get_investor_dict, get_monthly_return_dict, get_product_dict
-from models import AllowedPreference_list, Investor, MonthlyReturn, Product
 from pydantic import ValidationError
+
+from core.loader import get_investor_dict, get_monthly_return_dict, get_product_dict
+from core.models import AllowedPreference_list, Investor, MonthlyReturn, Product
 
 
 def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], list[str]]:
