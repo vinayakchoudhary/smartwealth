@@ -2,7 +2,7 @@ from collections.abc import KeysView
 from math import floor
 
 from loader import get_investor_dict, get_monthly_return_dict, get_product_dict
-from models import AllowedPreference, Investor, MonthlyReturn, Product
+from models import AllowedPreference_list, Investor, MonthlyReturn, Product
 from pydantic import ValidationError
 
 
@@ -21,8 +21,8 @@ def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], list[str]
                 warnings.append(f"investor_id {investor_id}: has fractional horizon_months {horizon_months}, the model assumes it to be an integer, horizon months are taken as {floor(horizon_months)}")
             data[investor_id]["horizon_months"] = floor(horizon_months)
 
-            if investor_data["preference"] and investor_data["preference"] not in AllowedPreference:
-                warnings.append(f"investor_id {investor_id}: has preference {investor_data['preference']}, model only allows {AllowedPreference} as preferences, preference not considered ")
+            if investor_data.get("preference") and investor_data["preference"] not in AllowedPreference_list:
+                warnings.append(f"investor_id {investor_id}: has preference {investor_data['preference']}, model only allows {AllowedPreference_list} as preferences, preference not considered ")
                 investor_data["preference"] = None
             
             if investor_data["goal_amount_inr"] < 10_000:

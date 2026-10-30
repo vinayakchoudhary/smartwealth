@@ -16,7 +16,7 @@ Int1to5 = Annotated[int, Field(ge=1, le=5)] # we are assuming the risk and the t
 
 
 AllowedExperiences = Literal["beginner", "advanced", "intermediate"]
-AllowedPreference = ["high_growth", "capital_protection", "low_cost", "avoid_equity", "tax_saving", "no_lock_in"]
+AllowedPreference_list = ["high_growth", "capital_protection", "low_cost", "avoid_equity", "tax_saving", "no_lock_in"]
 AllowedAssetClass = Literal["cash", "debt", "hybrid", "equity"]
 
 class Investor(BaseModel):
