@@ -1,5 +1,5 @@
 from collections.abc import KeysView
-from math import floor
+from math import ceil, floor
 
 from pydantic import ValidationError
 
@@ -23,6 +23,24 @@ def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], dict[str,
                 warnings[investor_id].append(f"{investor_id}: has fractional horizon_months {horizon_months}, the model assumes it to be an integer, horizon months are taken as {floor(horizon_months)}")
             data[investor_id]["horizon_months"] = floor(horizon_months)
 
+            if investor_data["emergency_fund_months"] < 3:
+                to_add = 4*investor_data["monthly_sip_inr"]*(3 - investor_data["emergency_fund_months"])
+                if to_add <= investor_data["existing_investment_inr"]:
+                    warnings[investor_id].append(f"{investor_id}: has emergency fund of less than 3 months. Assuming monthly expenses to be 4 times the monthly sip, \
+                        invest {to_add:,.0f} from existing_investment_inr in a liquid-buffer. This money would act as a safety net and thus wouldn't be considered in investements")
+                    data[investor_id]["existing_investment_inr"] -= to_add
+                else:
+                    wait_months = ceil((to_add - investor_data["existing_investment_inr"]) / investor_data["monthly_sip_inr"])
+                    warnings[investor_id].append(f"{investor_id}: has an emergency fund of less than 3 months. Assuming monthly expesnses to be 4 times the monthly sip, \
+                        invest {investor_data["existing_investment_inr"]:,.0f} from existing_investment_inr in a liquid-buffer;\
+                        Along with this, invest the entire monthly sip into the liquid-buffer for {wait_months} months to achieve a emergency fund for 3 months of \
+                        expenese. Further Caluculations including the the csv files would be considering {wait_months} as month 0, your horizon months would be edited accordingly")
+                    data[investor_id]["horizon_months"] -= wait_months
+                    data[investor_id]["existing_investment_inr"] = 0
+                    
+
+
+
             if investor_data.get("preference") and investor_data["preference"] not in AllowedPreference_list:
                 warnings[investor_id].append(f"{investor_id}: has preference {investor_data['preference']}, model only allows {AllowedPreference_list} as preferences, preference not considered")
                 investor_data["preference"] = None
@@ -31,7 +49,6 @@ def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], dict[str,
                 warnings[investor_id].apppend(f"{investor_id}: consider checking units of goal_amount_inr(inr{investor_data['goal_amount_inr']})")
 
             if investor_data["goal_amount_inr"] <= investor_data["existing_investment_inr"]:
-                
                 warnings[investor_id].append(f"investor_id {investor_id}: goal is already achieved")
             elif investor_data["goal_amount_inr"] <= investor_data["existing_investment_inr"] + investor_data["monthly_sip_inr"] * investor_data["horizon_months"]:
                 warnings[investor_id].append(f"investor_id {investor_id}: goal can be achieved without returns from the market")
