@@ -1,6 +1,9 @@
 from csv import writer
+from pathlib import Path
 from typing import cast
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+CSV_DIR = BASE_DIR / "out"
 
 def write_allotment_csv(investor_dict: dict[str, dict[str, str|float|None]], product_ids: list[str], weights: dict[str, list[float]]):
     first_line = ["investor_id", "existing_investment_inr", "monthly_sip_inr", "status"]
@@ -19,7 +22,7 @@ def write_allotment_csv(investor_dict: dict[str, dict[str, str|float|None]], pro
                 line.extend([f"{weights[investor_id][i]:.4f}", f"{(weights[investor_id][i]*investments):.0f}", f"{(weights[investor_id][i]*sip):.0f}"]) # type: ignore
         data.append(line)
     
-    with open("allotment.csv", "w") as file:
+    with open(CSV_DIR / "allotment.csv", "w") as file:
         csv_writer = writer(file)
         csv_writer.writerow(first_line)
         csv_writer.writerows(data)
@@ -41,6 +44,6 @@ def write_summary_csv(investor_dict: dict[str, dict[str, str|float|None]], net_r
             line.append("Achievable" if goal_projections[investor_id] >= cast(float, inverstor_data["goal_amount_inr"]) else "Not Achievable")
             data.append(line + [f"{(goal_projections[investor_id] - cast(float, inverstor_data['goal_amount_inr'])):.0f}"])
 
-    with open("summary.csv", "w") as file:
+    with open(CSV_DIR / "summary.csv", "w") as file:
         csv_writer = writer(file)
         csv_writer.writerows(data)
