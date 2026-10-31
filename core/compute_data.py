@@ -33,12 +33,14 @@ product_ids: list[str]) -> tuple[dict[str,  float], dict[str, float], dict[str, 
 
 
 # r = r_b + z * volitility_factor / (sqrt(12) * sprt(m))
-def goal_projection(ror: float, months: int, investments: float, sip: float, case_take: Literal["b", "o", "c"], volatility_proxy: float) -> float:
-    z = 1 if case_take == "o" else -1 if case_take == "c" else 0
+def goal_projection(ror: float, months: int, investments: float, sip: float, case_taken: Literal["b", "o", "c"], volatility_proxy: float) -> float:
+    if months == 0:
+        return investments
+    z = 1 if case_taken == "o" else -1 if case_taken == "c" else 0
     rm = ror / 12 + z * volatility_proxy / (sqrt(12) * sqrt(months))
     if (rm == 0):
         return investments + months * sip
-    return investments*(1 + rm)**months + sip*((1 + rm)**months - 1)/rm\
+    return investments*(1 + rm)**months + sip*((1 + rm)**months - 1)/rm
         
 
 
@@ -58,3 +60,9 @@ def get_goal_projections(investor_dict: dict[str, dict[str, str|float|None]], ne
             )  
     return goal_projections
 
+
+def get_total_investment_each_month(months:int, ror: float, investments: float, sip: float, volatility_proxy: float, case_taken:Literal["o", "c", "b"]) -> list[float]:
+    res = []
+    for i in range(months + 1):
+        res.append(goal_projection(ror, i, investments, sip, case_taken, volatility_proxy))
+    return res;

@@ -5,13 +5,17 @@ from core.compute_data import (
     get_net_rors__risk_scores__volatility_proxys__expense_ratios,
     get_weights,
 )
-from core.draw_fig import draw_pie_chart
+from core.draw_fig import draw_line_graph_investments, draw_pie_chart_weigths
 from core.validator import get_and_validate_investor_dict, get_and_validate_product_dict
 from core.write_csv import write_allotment_csv, write_summary_csv
 
 
 def main():
     st.title("Smart Wealth")
+    st.set_page_config(
+        page_title="Wealth",
+        layout="wide",  # Options: "centered" or "wide"
+    )
     investor_dict, investor_errors, investor_warnings = get_and_validate_investor_dict("investor_profiles.csv")
     product_dict, product_errors, product_warnings = get_and_validate_product_dict("investment_products.csv")
     product_list = list(product_dict.items())
@@ -35,7 +39,9 @@ def main():
     alloted_investors = [k for k in investor_dict if weights[k] is not None]
     selected_investor = st.selectbox("Choose an invester:", sorted(alloted_investors), index=None, placeholder="Select investor_id")
     if selected_investor:
-        st.plotly_chart(draw_pie_chart(product_ids, weights[selected_investor], investor_dict[selected_investor]["existing_investment_inr"], investor_dict[selected_investor]["monthly_sip_inr"]), width="stretch")
+        st.plotly_chart(draw_pie_chart_weigths(product_ids, weights[selected_investor], investor_dict[selected_investor]["existing_investment_inr"], investor_dict[selected_investor]["monthly_sip_inr"]), width="stretch")
+        st.plotly_chart(draw_line_graph_investments(net_rors[selected_investor], investor_dict[selected_investor]["horizon_months"],investor_dict[selected_investor]["existing_investment_inr"], \
+            investor_dict[selected_investor]["monthly_sip_inr"], volatility_proxy=volatility_proxys[selected_investor]), width="stretch")
         
 
 
