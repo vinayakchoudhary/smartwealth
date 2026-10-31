@@ -66,3 +66,17 @@ def get_total_investment_each_month(months:int, ror: float, investments: float, 
     for i in range(months + 1):
         res.append(goal_projection(ror, i, investments, sip, case_taken, volatility_proxy))
     return res;
+
+
+def get_asset_class_dict(weights: list[float], product_list: list[tuple[str, dict[str, str|float]]]) -> dict[str, float]:
+    asset_class_dict = {"cash": 0.0, "debt":0.0, "hybrid":0.0, "equity":0.0}
+    for weight, (product_id, product_data) in zip(weights, product_list):
+        asset_class_dict[cast(str, product_data["asset_class"])] += weight
+    return asset_class_dict
+
+
+def get_risk_score_dict(weights: list[float], product_list: list[tuple[str, dict[str, str|float]]]) -> dict[int, float]:
+    risk_score_dict = {i: 0.0 for i in range(1, 6)}
+    for weight, (product_id, product_data) in zip(weights, product_list):
+        risk_score_dict[int(product_data["risk_score"])] += weight
+    return risk_score_dict

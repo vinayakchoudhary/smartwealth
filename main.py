@@ -1,11 +1,18 @@
 import streamlit as st
 
 from core.compute_data import (
+    get_asset_class_dict,
     get_goal_projections,
     get_net_rors__risk_scores__volatility_proxys__expense_ratios,
+    get_risk_score_dict,
     get_weights,
 )
-from core.draw_fig import draw_line_graph_investments, draw_pie_chart_weigths
+from core.draw_fig import (
+    draw_line_graph_investments,
+    draw_pie_chart_assets,
+    draw_pie_chart_risks,
+    draw_pie_chart_weigths,
+)
 from core.validator import get_and_validate_investor_dict, get_and_validate_product_dict
 from core.write_csv import write_allotment_csv, write_summary_csv
 
@@ -13,8 +20,8 @@ from core.write_csv import write_allotment_csv, write_summary_csv
 def main():
     st.title("Smart Wealth")
     st.set_page_config(
-        page_title="Wealth",
-        layout="wide",  # Options: "centered" or "wide"
+        page_title="Smart Wealth",
+        layout="wide",
     )
     investor_dict, investor_errors, investor_warnings = get_and_validate_investor_dict("investor_profiles.csv")
     product_dict, product_errors, product_warnings = get_and_validate_product_dict("investment_products.csv")
@@ -25,8 +32,6 @@ def main():
     net_rors, risk_scores, volatility_proxys, expense_ratios = get_net_rors__risk_scores__volatility_proxys__expense_ratios(investor_dict, product_dict, weights, product_ids)
     goal_projections = get_goal_projections(investor_dict, net_rors)
     write_summary_csv(investor_dict, net_rors, volatility_proxys, risk_scores, goal_projections, expense_ratios)
-    if (len(investor_warnings) > 0):
-        st.warning("Warnings for investor data:\n- " + "\n- ".join(investor_warnings))
     if (len(investor_errors) > 0):
         st.error("Errors in investor data:\n- " + "\n- ".join(investor_errors))
     if (len(product_warnings) > 0):
@@ -39,6 +44,8 @@ def main():
     alloted_investors = [k for k in investor_dict if weights[k] is not None]
     selected_investor = st.selectbox("Choose an invester:", sorted(alloted_investors), index=None, placeholder="Select investor_id")
     if selected_investor:
+        if len(investor_warnings[selected_investor]) > 0:
+            st.warning(f"Warnings for {selected_investor}:\n- " + "\n- ".join(investor_warnings[selected_investor]))
         col_init_investment, col_monthly_sip = st.columns(2)
         col_init_investment.metric("Existing Investment (inr)", f"{investor_dict[selected_investor]['existing_investment_inr']:,.0f}")
         col_monthly_sip.metric("Monthly SIP (inr)", f"{investor_dict[selected_investor]['monthly_sip_inr']:,.0f}")
@@ -64,12 +71,13 @@ def main():
         else:
             col_delta.metric("Shortfall (inr)", f"{(goal - projection):,.0f}")
 
-
-
-
-
-
-        st.plotly_chart(draw_pie_chart_weigths(product_ids, weights[selected_investor], investor_dict[selected_investor]["existing_investment_inr"], investor_dict[selected_investor]["monthly_sip_inr"]), width="stretch")
+        col_pie_1, col_pie_2, col_pie_3 = st.columns(3)
+        with col_pie_1:
+            st.plotly_chart(draw_pie_chart_weigths(product_ids, weights[selected_investor], investor_dict[selected_investor]["existing_investment_inr"], investor_dict[selected_investor]["monthly_sip_inr"]), width="stretch")
+        with col_pie_2:
+            st.plotly_chart(draw_pie_chart_assets(get_asset_class_dict(weights[selected_investor], product_list)), width="stretch")
+        with col_pie_3:
+            st.plotly_chart(draw_pie_chart_risks(get_risk_score_dict(weights[selected_investor], product_list)), width="stretch")
         st.plotly_chart(draw_line_graph_investments(net_rors[selected_investor], investor_dict[selected_investor]["horizon_months"],investor_dict[selected_investor]["existing_investment_inr"], \
             investor_dict[selected_investor]["monthly_sip_inr"], volatility_proxy=volatility_proxys[selected_investor]), width="stretch")
         

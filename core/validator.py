@@ -7,9 +7,9 @@ from core.loader import get_investor_dict, get_monthly_return_dict, get_product_
 from core.models import AllowedPreference_list, Investor, MonthlyReturn, Product
 
 
-def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], list[str]]:
+def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], dict[str, str]]:
     data = get_investor_dict(filename)
-    errors, warnings = [], []
+    errors, warnings = [], {}
     for investor_id, investor_data in tuple(data.items()):
         try:
             Investor(investor_id=investor_id, **investor_data)
@@ -17,23 +17,24 @@ def get_and_validate_investor_dict(filename) -> tuple[dict, list[str], list[str]
             errors.append(f"investor_id {investor_id} invalid input found\n{e}")
             data.pop(investor_id) # safe as we iterate over the tupele
         else:
+            warnings[investor_id] = []
             horizon_months = float(investor_data["horizon_months"])
             if not horizon_months.is_integer():
-                warnings.append(f"investor_id {investor_id}: has fractional horizon_months {horizon_months}, the model assumes it to be an integer, horizon months are taken as {floor(horizon_months)}")
+                warnings[investor_id].append(f"{investor_id}: has fractional horizon_months {horizon_months}, the model assumes it to be an integer, horizon months are taken as {floor(horizon_months)}")
             data[investor_id]["horizon_months"] = floor(horizon_months)
 
             if investor_data.get("preference") and investor_data["preference"] not in AllowedPreference_list:
-                warnings.append(f"investor_id {investor_id}: has preference {investor_data['preference']}, model only allows {AllowedPreference_list} as preferences, preference not considered ")
+                warnings[investor_id].append(f"{investor_id}: has preference {investor_data['preference']}, model only allows {AllowedPreference_list} as preferences, preference not considered")
                 investor_data["preference"] = None
             
             if investor_data["goal_amount_inr"] < 10_000:
-                warnings.append(f"investor_id {investor_id}: consider checking units of goal_amount_inr(inr{investor_data['goal_amount_inr']})")
+                warnings[investor_id].apppend(f"{investor_id}: consider checking units of goal_amount_inr(inr{investor_data['goal_amount_inr']})")
 
             if investor_data["goal_amount_inr"] <= investor_data["existing_investment_inr"]:
                 
-                warnings.append(f"investor_id {investor_id}: goal is already achieved")
+                warnings[investor_id].append(f"investor_id {investor_id}: goal is already achieved")
             elif investor_data["goal_amount_inr"] <= investor_data["existing_investment_inr"] + investor_data["monthly_sip_inr"] * investor_data["horizon_months"]:
-                warnings.append(f"investor_id {investor_id}: goal can be achieved without returns from the market")
+                warnings[investor_id].append(f"investor_id {investor_id}: goal can be achieved without returns from the market")
     if len(data) == 0:
         errors.append("Fatal Error: There must be at least one investor")
     return (data, errors, warnings)
@@ -99,8 +100,7 @@ def get_and_validate_monthly_return_dict(filename:str, products:KeysView[str]) -
 
 
 if __name__ == "__main__":
-    products = get_and_validate_product_dict("investment_products.csv")[0]
-    print(get_and_validate_monthly_return_dict("synthetic_monthly_returns.csv", products.keys()))
+    print(get_and_validate_investor_dict("investor_profiles.csv")[2])
 
 
     

@@ -17,6 +17,7 @@ def draw_pie_chart_weigths(product_ids: list[str], weights: list[float], investm
         title="Portfolio Allocation",
         custom_data=["existing_investment_inr", "monthly_sip_inr"],
         color_discrete_sequence=px.colors.qualitative.Set3,
+        hole=0.5
     )
 
     fig.update_traces(
@@ -25,6 +26,44 @@ def draw_pie_chart_weigths(product_ids: list[str], weights: list[float], investm
         # + "existing_investment_inr: %{customdata[0][0]}<br>"
         + " existing_investment_inr: <b>%{customdata[0][0]:,.0f}</b><br>"
         + " jmonthly_sip_inr: <b>%{customdata[0][1]:,.0f}</b><br>"
+    )
+    return fig
+
+
+
+def draw_pie_chart_assets(asset_class_dict: dict[str, float]):
+    df = pd.DataFrame(list(asset_class_dict.items()), columns=["Asset Class", "Share"])
+    df = df[df["Share"] > 0]
+    fig = px.pie(
+        df,
+        values="Share",
+        names="Asset Class",
+        title="Assert Classes Distribution",
+        color_discrete_sequence=px.colors.qualitative.Set3,
+        hole=0.5
+    )
+
+    fig.update_traces(
+        hovertemplate="Asset Class: <b>%{label}</b><br>Share: <b>%{percent}</b><extra></extra>"
+    )
+    return fig
+
+    
+
+def draw_pie_chart_risks(risks_score_dict: dict[int, float]):
+    df = pd.DataFrame(list(risks_score_dict.items()), columns=["Risk Score", "Share"])
+    df = df[df["Share"] > 0]
+    fig = px.pie(
+        df,
+        values="Share",
+        names="Risk Score",
+        title="Risk Score Distribution",
+        color_discrete_sequence=px.colors.qualitative.Set3,
+        hole=0.5
+    )
+
+    fig.update_traces(
+        hovertemplate="Risk Score: <b>%{label}</b><br>Share: <b>%{percent}</b><extra></extra>"
     )
     return fig
 
